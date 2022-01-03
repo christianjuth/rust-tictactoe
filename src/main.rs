@@ -2,11 +2,11 @@ use rand::Rng;
 use std::io;
 use colored::*;
 
-type GameState = [i32; 9];
+type GameState = [i8; 9];
 
-const X: i32 = -1;
-const O: i32 = 1;
-const EMPTY: i32 = 0;
+const X: i8 = -1;
+const O: i8 = 1;
+const EMPTY: i8 = 0;
 
 const MAX: f32 = 1000.0;
 const MIN: f32 = -1.0 * MAX;
@@ -20,9 +20,9 @@ struct Node {
 
 fn minimax_rec(
     node: &mut Node,
-    player: i32,
+    player: i8,
     is_max: bool,
-    level: i32,
+    level: u8,
     a: f32,
     b: f32
 ) -> f32 {
@@ -89,7 +89,7 @@ fn minimax_rec(
 		}
     }
 
-    return value;
+    value
 }
 
 fn minimax(game_state: GameState) -> Option<GameState> {
@@ -107,10 +107,34 @@ fn minimax(game_state: GameState) -> Option<GameState> {
         }
     }
 
-    return None;
+    None
+}
+
+fn is_winnable(game_state: GameState) -> bool {
+    let winner = check_winner(game_state);
+
+    if winner != None && winner != Some(EMPTY) {
+        return true;
+    }
+
+    let children = get_next_moves(game_state);
+    
+    if children.len() == 0 {
+        return false;
+    }
+
+    for child in children {
+        if is_winnable(child) {
+            return true;
+        }
+    }
+
+    false
 }
 
 fn print_game(game_state: GameState) {
+    clear_console();
+
     for (i, num) in game_state.iter().enumerate() {
         let str = match num {
             &X => String::from("X"),
@@ -126,7 +150,7 @@ fn print_game(game_state: GameState) {
     }
 }
 
-fn whos_turn(game_state: GameState) -> i32 {
+fn whos_turn(game_state: GameState) -> i8 {
     let mut i = 0;
 
     for num in game_state {
@@ -173,10 +197,10 @@ fn get_next_moves(game_state: GameState) -> Vec<GameState> {
     }
 
     a.append(&mut b);
-    return a;
+    a
 }
 
-fn check_winner(game_state: GameState) -> Option<i32> {
+fn check_winner(game_state: GameState) -> Option<i8> {
     let winning_cell_combinations = [
 		// horizontal
 		[0, 1, 2],
@@ -216,14 +240,14 @@ fn check_winner(game_state: GameState) -> Option<i32> {
     }
 
     // draw
-    return Some(EMPTY);
+    Some(EMPTY)
 }
 
 fn play_move(game_state: GameState, index: usize) -> GameState {
     let mut game_state = game_state;
     let player = whos_turn(game_state);
     game_state[index] = player;
-    return game_state;
+    game_state
 }
 
 fn get_move(game_state: GameState) -> GameState {
@@ -249,7 +273,7 @@ fn clear_console() {
     print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
 }
 
-fn get_player() -> i32 {
+fn get_player() -> i8 {
     clear_console();
     println!("Enter player (X,O)");
     let mut player = String::new();
@@ -264,7 +288,7 @@ fn get_player() -> i32 {
         return O;
     }
 
-    return X;
+    X
 }
 
 fn main() {
@@ -278,13 +302,12 @@ fn main() {
     print_game(game);
 
     let mut i = 0;
-    while check_winner(game) == None {
+    while check_winner(game) == None && is_winnable(game) {
         if i % 2 == player {
             game = get_move(game);
         } else {
             game = minimax(game).unwrap();
         }
-        clear_console();
         print_game(game);
         i += 1;
     }
@@ -293,7 +316,7 @@ fn main() {
         Some(X) => "X wins",
         Some(O) => "O wins",
         Some(EMPTY) => "draw",
-        _ => "no winner"
+        _ => "draw (not winnable)"
     };
 
     println!("{}", winner);
