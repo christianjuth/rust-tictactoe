@@ -258,7 +258,14 @@ fn get_move(game_state: GameState) -> GameState {
         .read_line(&mut index)
         .expect("Failed to read line");
 
-    let index: usize = index.trim().parse().unwrap();
+    let index = index.trim().parse::<usize>();
+
+    if let Err(_) = &index {
+        println!("Invalid input");
+        return get_move(game_state);
+    }
+
+    let index = index.unwrap();
 
     if index > 8 || game_state[index] != EMPTY {
         println!("Illegal move");
